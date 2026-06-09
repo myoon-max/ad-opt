@@ -20,15 +20,16 @@ cp .env.example .env   # 실제 값 입력
 | `GOOGLE_ADS_CUSTOMER_ID` | 광고 계정 ID |
 | `GOOGLE_ADS_LOGIN_CUSTOMER_ID` | MCC ID (있을 경우) |
 
-### Refresh Token 발급
+### Refresh Token 발급 (최초 1회)
 
 ```bash
 export GOOGLE_ADS_CLIENT_ID=...
 export GOOGLE_ADS_CLIENT_SECRET=...
-python3 scripts/oauth_setup.py
-# 출력된 URL 접속 → 인증 코드 복사
-OAUTH_CODE=<코드> python3 scripts/oauth_setup.py
+python3 scripts/oauth_setup.py          # 인증 URL 출력
+OAUTH_CODE=<인증코드> python3 scripts/oauth_setup.py   # Refresh Token 발급
 ```
+
+Google Cloud OAuth 클라이언트에 `urn:ietf:wg:oauth:2.0:oob` 리다이렉트 URI가 등록되어 있어야 합니다.
 
 ### 계정 감사 실행
 
