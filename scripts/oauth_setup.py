@@ -2,6 +2,7 @@
 """Generate Google Ads OAuth refresh token."""
 import json
 import os
+import secrets
 from pathlib import Path
 
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -25,19 +26,23 @@ def client_config():
     }
 
 
-def new_flow(redirect_uri: str) -> InstalledAppFlow:
+def new_flow(redirect_uri: str, code_verifier: str) -> InstalledAppFlow:
     flow = InstalledAppFlow.from_client_config(client_config(), scopes=SCOPES)
     flow.redirect_uri = redirect_uri
+    flow.code_verifier = code_verifier
     return flow
 
 
-def save_state(flow: InstalledAppFlow, redirect_uri: str, state: str) -> None:
-    payload = {
-        "redirect_uri": redirect_uri,
-        "state": state,
-        "code_verifier": getattr(flow.oauth2session, "code_verifier", None),
-    }
-    STATE_FILE.write_text(json.dumps(payload))
+def save_state(redirect_uri: str, state: str, code_verifier: str) -> None:
+    STATE_FILE.write_text(
+        json.dumps(
+            {
+                "redirect_uri": redirect_uri,
+                "state": state,
+                "code_verifier": code_verifier,
+            }
+        )
+    )
 
 
 def load_state() -> dict:
@@ -50,9 +55,7 @@ def load_state() -> dict:
 
 def exchange_code(code: str) -> str:
     saved = load_state()
-    flow = new_flow(saved["redirect_uri"])
-    if saved.get("code_verifier"):
-        flow.oauth2session.code_verifier = saved["code_verifier"]
+    flow = new_flow(saved["redirect_uri"], saved["code_verifier"])
     flow.fetch_token(code=code)
     STATE_FILE.unlink(missing_ok=True)
     return flow.credentials.refresh_token
@@ -69,13 +72,14 @@ def main():
     redirect_uri = os.environ.get(
         "OAUTH_REDIRECT_URI", "urn:ietf:wg:oauth:2.0:oob"
     )
-    flow = new_flow(redirect_uri)
+    code_verifier = secrets.token_urlsafe(64)
+    flow = new_flow(redirect_uri, code_verifier)
     auth_url, state = flow.authorization_url(
         access_type="offline",
         include_granted_scopes="true",
         prompt="consent",
     )
-    save_state(flow, redirect_uri, state)
+    save_state(redirect_uri, state, flow.code_verifier)
     print("1) 아래 URL 접속 → Google Ads 권한 승인")
     print("2) 표시된 인증 코드를 복사")
     print("3) OAUTH_CODE=<코드> python3 scripts/oauth_setup.py 실행")
