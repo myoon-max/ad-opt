@@ -32,7 +32,7 @@ jobs:
           python3 scripts/daily_report.py
 
       - name: Upload report artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ads-report-${{ github.run_id }}
           path: reports/
