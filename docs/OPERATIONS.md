@@ -6,7 +6,11 @@
 python3 scripts/daily_report.py
 ```
 
-GitHub Actions: `.github/workflows/daily-ads-report.yml`  
+GitHub Actions: `.github/workflows/daily-ads-report.yml`
+
+> Cursor 클라우드 토큰은 GitHub Secrets 쓰기 권한이 없음.  
+> 대안: `scripts/run_daily_cron.sh` (에이전트/서버 cron) 또는 repo Owner가 Secrets 1회 등록.
+
 Repository Secrets 필요:
 
 - `GOOGLE_ADS_DEVELOPER_TOKEN`
