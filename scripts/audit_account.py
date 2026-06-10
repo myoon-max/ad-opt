@@ -15,9 +15,11 @@ def get_client():
         "client_id": os.environ["GOOGLE_ADS_CLIENT_ID"],
         "client_secret": os.environ["GOOGLE_ADS_CLIENT_SECRET"],
         "refresh_token": os.environ.get("GOOGLE_ADS_REFRESH_TOKEN", ""),
-        "login_customer_id": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", "").replace("-", ""),
         "use_proto_plus": True,
     }
+    login = os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", "").replace("-", "").strip()
+    if login:
+        config["login_customer_id"] = login
     return GoogleAdsClient.load_from_dict(config)
 
 
