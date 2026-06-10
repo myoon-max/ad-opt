@@ -5,28 +5,19 @@ import os
 import sys
 from datetime import datetime, timedelta, timezone
 
-from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
+from google_ads_config import customer_id, make_client, test_api_access
+
 KST = timezone(timedelta(hours=9))
-CUSTOMER_ID = os.environ.get("GOOGLE_ADS_CUSTOMER_ID", "4937153045").replace("-", "")
+CUSTOMER_ID = customer_id()
 CAMPAIGN_ID = 23843241063
 PROMO_TOTAL = 100_000
 PROMO_END = datetime(2026, 6, 30, tzinfo=KST)
 
 
-def client():
-    return GoogleAdsClient.load_from_dict({
-        "developer_token": os.environ["GOOGLE_ADS_DEVELOPER_TOKEN"],
-        "client_id": os.environ["GOOGLE_ADS_CLIENT_ID"],
-        "client_secret": os.environ["GOOGLE_ADS_CLIENT_SECRET"],
-        "refresh_token": os.environ["GOOGLE_ADS_REFRESH_TOKEN"],
-        "use_proto_plus": True,
-    })
-
-
 def search(query):
-    ga = client().get_service("GoogleAdsService")
+    ga = make_client().get_service("GoogleAdsService")
     rows = []
     for batch in ga.search_stream(customer_id=CUSTOMER_ID, query=query):
         for row in batch.results:
@@ -204,9 +195,11 @@ def format_markdown(r):
 
 if __name__ == "__main__":
     try:
+        test_api_access()
         report = build_report()
         md = format_markdown(report)
-        out_dir = os.environ.get("REPORT_DIR", "/workspace/reports")
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        out_dir = os.environ.get("REPORT_DIR", os.path.join(root, "reports"))
         os.makedirs(out_dir, exist_ok=True)
         date_str = datetime.now(KST).strftime("%Y-%m-%d")
         with open(f"{out_dir}/{date_str}.md", "w") as f:

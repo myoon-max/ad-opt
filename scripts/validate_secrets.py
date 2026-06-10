@@ -1,62 +1,46 @@
 #!/usr/bin/env python3
-"""Validate Google Ads credentials before running reports."""
+"""Validate Google Ads credentials with a real API call."""
 import os
 import sys
 
-
-REQUIRED = [
-    "GOOGLE_ADS_DEVELOPER_TOKEN",
-    "GOOGLE_ADS_CLIENT_ID",
-    "GOOGLE_ADS_CLIENT_SECRET",
-    "GOOGLE_ADS_REFRESH_TOKEN",
-    "GOOGLE_ADS_CUSTOMER_ID",
-]
+sys.path.insert(0, os.path.dirname(__file__))
+from google_ads_config import REQUIRED_ENV, test_api_access  # noqa: E402
 
 
 def main():
-    missing = []
-    for key in REQUIRED:
-        val = (os.environ.get(key) or "").strip()
-        if not val:
-            missing.append(key)
-        else:
-            os.environ[key] = val
-
+    missing = [k for k in REQUIRED_ENV if not (os.environ.get(k) or "").strip()]
     if missing:
         print("ERROR: Missing secrets:", ", ".join(missing), file=sys.stderr)
         sys.exit(1)
 
-    client_id = os.environ["GOOGLE_ADS_CLIENT_ID"]
+    client_id = os.environ["GOOGLE_ADS_CLIENT_ID"].strip()
     if not client_id.endswith(".apps.googleusercontent.com"):
         print("ERROR: GOOGLE_ADS_CLIENT_ID format looks wrong.", file=sys.stderr)
         sys.exit(1)
 
-    if not os.environ["GOOGLE_ADS_CLIENT_SECRET"].startswith("GOCSPX-"):
+    if not os.environ["GOOGLE_ADS_CLIENT_SECRET"].strip().startswith("GOCSPX-"):
         print("ERROR: GOOGLE_ADS_CLIENT_SECRET should start with GOCSPX-", file=sys.stderr)
         sys.exit(1)
 
-    if not os.environ["GOOGLE_ADS_REFRESH_TOKEN"].startswith("1//"):
+    if not os.environ["GOOGLE_ADS_REFRESH_TOKEN"].strip().startswith("1//"):
         print("ERROR: GOOGLE_ADS_REFRESH_TOKEN format looks wrong.", file=sys.stderr)
         sys.exit(1)
 
     try:
-        from google.ads.googleads.client import GoogleAdsClient
-
-        GoogleAdsClient.load_from_dict({
-            "developer_token": os.environ["GOOGLE_ADS_DEVELOPER_TOKEN"],
-            "client_id": os.environ["GOOGLE_ADS_CLIENT_ID"],
-            "client_secret": os.environ["GOOGLE_ADS_CLIENT_SECRET"],
-            "refresh_token": os.environ["GOOGLE_ADS_REFRESH_TOKEN"],
-            "use_proto_plus": True,
-        })
-        print("OK: OAuth credentials accepted.")
+        name = test_api_access()
+        print(f"OK: API access verified for account '{name}'.")
     except Exception as exc:
         msg = str(exc)
-        print(f"ERROR: Credential check failed: {msg}", file=sys.stderr)
+        print(f"ERROR: API check failed: {msg}", file=sys.stderr)
         if "invalid_client" in msg:
             print(
-                "HINT: Re-save GOOGLE_ADS_CLIENT_ID and GOOGLE_ADS_CLIENT_SECRET "
-                "(no spaces). Use the icd8t5h5... client, not the old nsk1rhr... one.",
+                "HINT: GOOGLE_ADS_CLIENT_ID / CLIENT_SECRET 불일치. "
+                "icd8t5h5... 클라이언트 + GOCSPX-... 시크릿 다시 저장.",
+                file=sys.stderr,
+            )
+        elif "invalid_grant" in msg:
+            print(
+                "HINT: GOOGLE_ADS_REFRESH_TOKEN 만료/무효. oauth_setup.py 로 재발급.",
                 file=sys.stderr,
             )
         sys.exit(1)
