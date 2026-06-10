@@ -1,6 +1,12 @@
 .env
 .oauth_state.json
 reports/
+analysis_raw.txt
+audit_output.json
+deep_audit_output.json
+full_analysis.json
+query_extra.json
+apply_log*.json
 __pycache__/
 *.pyc
 .venv/
