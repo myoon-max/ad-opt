@@ -1,0 +1,40 @@
+{
+  "generated_at_kst": "2026-06-10 12:52 KST",
+  "promo": {
+    "total_budget": 100000,
+    "spent": 22857.0,
+    "remaining": 77143.0,
+    "days_left": 20,
+    "daily_needed_to_burn": 3857.0,
+    "end_date": "2026-06-30"
+  },
+  "yesterday": {
+    "cost": 495.0,
+    "clicks": 0,
+    "conversions": 0.0,
+    "value": 0.0
+  },
+  "last_7_days": {
+    "cost": 11736.0,
+    "clicks": 60,
+    "signups": 2.0,
+    "purchases": 2.0,
+    "roas": 0.95,
+    "cpa": 5868.0
+  },
+  "devices_7d": {
+    "DESKTOP": {
+      "cost": 3037.0,
+      "conv": 2.0
+    },
+    "MOBILE": {
+      "cost": 8699.0,
+      "conv": 0.0
+    }
+  },
+  "alerts": [
+    "모바일 지출 > 데스크톱, 모바일 전환 0"
+  ],
+  "on_track": true,
+  "bidding": "MAXIMIZE_CONVERSIONS"
+}

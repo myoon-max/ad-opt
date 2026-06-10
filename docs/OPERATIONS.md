@@ -6,6 +6,15 @@
 python3 scripts/daily_report.py
 ```
 
+### 리포트 보는 법 (Artifact 다운로드 필요 없음)
+
+| 방법 | 링크 |
+|------|------|
+| **HTML (추천)** | [reports/latest.html](../reports/latest.html) |
+| 마크다운 | [reports/latest.md](../reports/latest.md) |
+| Actions Summary | Actions → Daily Google Ads Report → run 클릭 → **Summary** 탭 |
+| 이메일 알림 | Issues → `ads-report` 라벨 이슈 → **Watch** |
+
 GitHub Actions: `.github/workflows/daily-ads-report.yml`
 
 > Cursor 클라우드 토큰은 GitHub Secrets 쓰기 권한이 없음.  

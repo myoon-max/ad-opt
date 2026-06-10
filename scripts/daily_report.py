@@ -155,42 +155,153 @@ def build_report():
     return report
 
 
+def progress_bar(spent, total, width=20):
+    pct = min(spent / total, 1.0) if total else 0
+    filled = round(pct * width)
+    return f"[{'█' * filled}{'░' * (width - filled)}] {pct * 100:.0f}%"
+
+
 def format_markdown(r):
     p = r["promo"]
     y = r["yesterday"]
     w = r["last_7_days"]
+    status = "✅ 정상 궤도" if r["on_track"] else "⚠️ 목표 미달 — 조치 검토 중"
+    bar = progress_bar(p["spent"], p["total_budget"])
     lines = [
-        f"# 합격닷컴 일일 광고 리포트",
+        "# 합격닷컴 일일 광고 리포트",
         f"**생성:** {r['generated_at_kst']}",
         "",
+        f"## {status}",
+        "",
         "## 프로모션 예산",
-        f"| 항목 | 값 |",
-        f"|------|-----|",
-        f"| 총 한도 | ₩{p['total_budget']:,} |",
+        f"```",
+        f"{bar}  ₩{p['spent']:,} / ₩{p['total_budget']:,}",
+        f"```",
+        "",
+        "| 항목 | 값 |",
+        "|------|-----|",
         f"| 사용 | ₩{p['spent']:,} |",
         f"| 잔여 | ₩{p['remaining']:,} |",
-        f"| D-day | {p['days_left']}일 (6/30 마감) |",
+        f"| D-day | **{p['days_left']}일** (6/30 마감) |",
         f"| 일평균 필요 소진 | ₩{p['daily_needed_to_burn']:,} |",
         "",
         "## 어제",
-        f"- 지출 ₩{y['cost']:,} / 클릭 {y['clicks']} / 전환 {y['conversions']} / 가치 ₩{y['value']:,}",
+        f"| 지출 | 클릭 | 전환 | 가치 |",
+        f"|------|------|------|------|",
+        f"| ₩{y['cost']:,} | {y['clicks']} | {y['conversions']} | ₩{y['value']:,} |",
         "",
         "## 최근 7일",
-        f"- 지출 ₩{w['cost']:,} / 가입 {w['signups']} / 결제 {w['purchases']}",
-        f"- ROAS {w['roas']} / CPA ₩{w['cpa']:,}",
-        f"- 입찰: {r['bidding']}",
+        f"| 지출 | 가입 | 결제 | ROAS | CPA |",
+        f"|------|------|------|------|-----|",
+        f"| ₩{w['cost']:,} | {w['signups']} | {w['purchases']} | {w['roas']} | ₩{w['cpa']:,} |",
+        f"| 입찰 | {r['bidding']} | | | |",
         "",
         "## 디바이스 (7일)",
+        "| 디바이스 | 지출 | 전환 |",
+        "|----------|------|------|",
     ]
     for d, v in r["devices_7d"].items():
-        lines.append(f"- {d}: ₩{v['cost']:,} / 전환 {v['conv']}")
+        lines.append(f"| {d} | ₩{v['cost']:,} | {v['conv']} |")
     if r["alerts"]:
         lines += ["", "## ⚠️ 알림"]
         for a in r["alerts"]:
             lines.append(f"- {a}")
-    status = "정상 궤도" if r["on_track"] else "목표 미달 — 조치 검토 중"
-    lines += ["", f"**판정:** {status}"]
     return "\n".join(lines)
+
+
+def format_html(r):
+    p = r["promo"]
+    y = r["yesterday"]
+    w = r["last_7_days"]
+    status = "정상 궤도" if r["on_track"] else "목표 미달"
+    status_color = "#16a34a" if r["on_track"] else "#dc2626"
+    pct = min(p["spent"] / p["total_budget"] * 100, 100) if p["total_budget"] else 0
+    alerts_html = ""
+    if r["alerts"]:
+        items = "".join(f"<li>{a}</li>" for a in r["alerts"])
+        alerts_html = f'<div class="alerts"><h2>⚠️ 알림</h2><ul>{items}</ul></div>'
+    devices_rows = "".join(
+        f"<tr><td>{d}</td><td>₩{v['cost']:,}</td><td>{v['conv']}</td></tr>"
+        for d, v in r["devices_7d"].items()
+    )
+    return f"""<!DOCTYPE html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>합격닷컴 광고 리포트 {r['generated_at_kst']}</title>
+<style>
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:720px;margin:0 auto;padding:24px;background:#f8fafc;color:#0f172a}}
+.card{{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}}
+h1{{font-size:1.4rem;margin:0 0 4px}}
+.meta{{color:#64748b;font-size:.9rem;margin-bottom:16px}}
+.badge{{display:inline-block;padding:6px 12px;border-radius:999px;color:#fff;font-weight:600;background:{status_color}}}
+.bar{{height:12px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:8px 0}}
+.bar-fill{{height:100%;background:linear-gradient(90deg,#3b82f6,#6366f1);width:{pct:.0f}%}}
+table{{width:100%;border-collapse:collapse;font-size:.95rem}}
+th,td{{padding:8px 10px;text-align:left;border-bottom:1px solid #e2e8f0}}
+th{{color:#64748b;font-weight:500}}
+.alerts{{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:12px 16px}}
+.stat-grid{{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}}
+.stat{{background:#f1f5f9;border-radius:8px;padding:12px}}
+.stat-label{{font-size:.8rem;color:#64748b}}
+.stat-value{{font-size:1.2rem;font-weight:700}}
+</style></head><body>
+<div class="card">
+<h1>합격닷컴 일일 광고 리포트</h1>
+<div class="meta">{r['generated_at_kst']}</div>
+<span class="badge">{status}</span>
+</div>
+<div class="card">
+<h2>프로모션 예산</h2>
+<div class="bar"><div class="bar-fill"></div></div>
+<p>₩{p['spent']:,} / ₩{p['total_budget']:,} ({pct:.0f}%) · 잔여 ₩{p['remaining']:,}</p>
+<div class="stat-grid">
+<div class="stat"><div class="stat-label">D-day</div><div class="stat-value">{p['days_left']}일</div></div>
+<div class="stat"><div class="stat-label">일평균 필요</div><div class="stat-value">₩{p['daily_needed_to_burn']:,}</div></div>
+</div>
+</div>
+<div class="card"><h2>어제</h2>
+<table><tr><th>지출</th><th>클릭</th><th>전환</th><th>가치</th></tr>
+<tr><td>₩{y['cost']:,}</td><td>{y['clicks']}</td><td>{y['conversions']}</td><td>₩{y['value']:,}</td></tr></table></div>
+<div class="card"><h2>최근 7일</h2>
+<table><tr><th>지출</th><th>가입</th><th>결제</th><th>ROAS</th><th>CPA</th></tr>
+<tr><td>₩{w['cost']:,}</td><td>{w['signups']}</td><td>{w['purchases']}</td><td>{w['roas']}</td><td>₩{w['cpa']:,}</td></tr></table>
+<p style="color:#64748b;margin-top:8px">입찰: {r['bidding']}</p></div>
+<div class="card"><h2>디바이스 (7일)</h2>
+<table><tr><th>디바이스</th><th>지출</th><th>전환</th></tr>{devices_rows}</table></div>
+{alerts_html}
+</body></html>"""
+
+
+def write_outputs(report, md, html, out_dir, date_str):
+    daily_dir = os.path.join(out_dir, "daily")
+    os.makedirs(daily_dir, exist_ok=True)
+    paths = {
+        "daily_md": os.path.join(daily_dir, f"{date_str}.md"),
+        "daily_json": os.path.join(daily_dir, f"{date_str}.json"),
+        "latest_md": os.path.join(out_dir, "latest.md"),
+        "latest_html": os.path.join(out_dir, "latest.html"),
+        "latest_json": os.path.join(out_dir, "latest.json"),
+    }
+    with open(paths["daily_md"], "w") as f:
+        f.write(md)
+    with open(paths["daily_json"], "w") as f:
+        json.dump(report, f, indent=2, ensure_ascii=False)
+    for key in ("latest_md", "latest_html", "latest_json"):
+        if key.endswith("_html"):
+            with open(paths[key], "w") as f:
+                f.write(html)
+        elif key.endswith("_md"):
+            with open(paths[key], "w") as f:
+                f.write(md)
+        else:
+            with open(paths[key], "w") as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        with open(summary_path, "a") as f:
+            f.write(md)
+            f.write("\n")
+    return paths
 
 
 if __name__ == "__main__":
@@ -198,14 +309,12 @@ if __name__ == "__main__":
         test_api_access()
         report = build_report()
         md = format_markdown(report)
+        html = format_html(report)
         root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         out_dir = os.environ.get("REPORT_DIR", os.path.join(root, "reports"))
         os.makedirs(out_dir, exist_ok=True)
         date_str = datetime.now(KST).strftime("%Y-%m-%d")
-        with open(f"{out_dir}/{date_str}.md", "w") as f:
-            f.write(md)
-        with open(f"{out_dir}/{date_str}.json", "w") as f:
-            json.dump(report, f, indent=2, ensure_ascii=False)
+        write_outputs(report, md, html, out_dir, date_str)
         print(md)
     except GoogleAdsException as ex:
         print(ex.failure.errors[0].message, file=sys.stderr)

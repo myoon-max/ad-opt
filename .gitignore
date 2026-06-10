@@ -1,6 +1,6 @@
 .env
 .oauth_state.json
-reports/
+reports/cron.log
 analysis_raw.txt
 audit_output.json
 deep_audit_output.json

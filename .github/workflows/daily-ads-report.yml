@@ -6,6 +6,10 @@ on:
     - cron: "0 23 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   report:
     runs-on: ubuntu-latest
@@ -31,10 +35,54 @@ jobs:
           python3 scripts/validate_secrets.py
           python3 scripts/daily_report.py
 
-      - name: Upload report artifact
-        uses: actions/upload-artifact@v7
+      - name: Post report to GitHub Issue (이메일 알림)
+        uses: actions/github-script@v7
         with:
-          name: ads-report-${{ github.run_id }}
-          path: reports/
-          retention-days: 90
-          if-no-files-found: error
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('reports/latest.md', 'utf8');
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const label = 'ads-report';
+            const title = '📊 합격닷컴 일일 광고 리포트';
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner, repo, state: 'open', labels: label, per_page: 1,
+            });
+            let issueNumber;
+            if (issues.length === 0) {
+              const { data: issue } = await github.rest.issues.create({
+                owner, repo, title,
+                body: '매일 08:00 KST 자동 리포트가 여기에 올라옵니다.\n\n**Watch(👁) 누르면 GitHub 이메일 알림**을 받을 수 있습니다.',
+                labels: [label],
+              });
+              issueNumber = issue.number;
+            } else {
+              issueNumber = issues[0].number;
+            }
+            const date = new Date().toISOString().slice(0, 10);
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issueNumber,
+              body: `## ${date} 리포트\n\n${body}\n\n---\n[HTML 버전](https://github.com/${owner}/${repo}/blob/main/reports/latest.html)`,
+            });
+
+      - name: Publish report to repository
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          commit_message: "report: daily ads ${{ github.run_number }}"
+          file_pattern: "reports/**"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Send email report
+        if: vars.ENABLE_EMAIL_REPORT == 'true'
+        uses: dawidd6/action-send-mail@v6
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "합격닷컴 광고 리포트 ${{ github.run_number }}"
+          to: ${{ secrets.REPORT_EMAIL_TO }}
+          from: ${{ secrets.SMTP_FROM }}
+          html_body: file://reports/latest.html
+          convert_markdown: false
