@@ -11,6 +11,15 @@ GitHub Actions: `.github/workflows/daily-ads-report.yml`
 > Cursor 클라우드 토큰은 GitHub Secrets 쓰기 권한이 없음.  
 > 대안: `scripts/run_daily_cron.sh` (에이전트/서버 cron) 또는 repo Owner가 Secrets 1회 등록.
 
+### Actions 실패 시 (invalid_client)
+
+`The OAuth client was not found` → Secrets 값이 틀림.
+
+아래 **최신 Client ID/Secret** 으로 다시 저장 (앞뒤 공백 없이).
+값은 `.env` 또는 담당자에게 받은 **icd8t5h5...** 클라이언트 사용.
+
+옛 Client (`nsk1rhr...`) 쓰면 실패함. 저장 후 Actions → Run workflow.
+
 Repository Secrets 필요:
 
 - `GOOGLE_ADS_DEVELOPER_TOKEN`
