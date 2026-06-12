@@ -104,6 +104,7 @@ def build_report():
     actions = {}
     for r in by_action:
         name = r.segments.conversion_action_name
+        # all_conversions: 태그 실제 발생 수 (conversions 컬럼은 설정에 따라 0일 수 있음)
         actions[name] = actions.get(name, 0) + r.metrics.all_conversions
 
     roas_7d = round(d7_value / d7_cost, 2) if d7_cost else 0
