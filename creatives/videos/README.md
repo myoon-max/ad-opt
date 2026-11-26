@@ -1,9 +1,23 @@
-# 영상 제작 — 솔직한 현황
+# 영상 제작 — 현황 & CapCut 대안
 
 ## v1_ai_influencer_hook_9x16.mp4 는 폐기함
 
-이미지에 글자 덧씌운 **슬라이드쇼**였음. 릴스/광고 수준이 아님.  
-**CapCut 공개 API 없음** — 계정 로그인 자동화 불가.
+이미지에 글자 덧씌운 **슬라이드쇼**였음. 릴스/광고 수준이 아님.
+
+---
+
+## CapCut 말고 — 전체 대안 조사
+
+**→ [`../video_tools_research.md`](../video_tools_research.md)** (50+ 툴, API/MCP 매트릭스)
+
+| 추천 | 툴 | 이유 |
+|------|-----|------|
+| 1순위 | **JSON2Video** + MCP | Cursor 에이전트가 직접 렌더 |
+| 훅 3초 | **D-ID** | `pmax_portrait` 사진→말하는 영상 |
+| 원스톱 | **Nextify / Kaloclip / HeyGen** | URL→UGC 광고 |
+| 에이전트 | **UGC Copilot / ReelsBuilder** | brief→10변형 A/B |
+
+CapCut은 **공개 API 없음** — 계정 로그인 자동화 불가.
 
 ---
 
@@ -12,60 +26,44 @@
 | 항목 | 이유 |
 |------|------|
 | CapCut 계정 연동 | API 없음 |
-| AI 인플루언서 릴스 풀퀄 | 영상 생성/편집 툴 + 사람 손 필요 |
-| 서버 headless 녹화 | hapgyuk.com/start 빈 화면 (앱 렌더 실패) |
+| FFmpeg 슬라이드쇼 | v1 품질 실패 |
+| 서버 headless 녹화 | hapgyuk.com/start 빈 화면 |
 
 ---
 
-## 10분 안에 끝내는 방법 (폰 + CapCut)
+## API 키 있으면 에이전트가 할 수 있는 것
 
-### 1) 훅 3초 — 셀카 영상
-폰 전면카메라로 아래 **그대로** 읽기:
+1. JSON2Video MCP → V1/V2 대본으로 9:16 MP4 (이미지 인서트+VO+자막)
+2. D-ID → portrait 3초 인플루언서 훅
+3. YouTube 업로드 → `scripts/add_youtube_asset.py`
 
+---
+
+## 수동 제작 (폰 녹화 + 편집기)
+
+CapCut / Canva / Descript / InVideo 등 UI 편집기 사용.
+
+### 1) 훅 3초 — 셀카 or D-ID
 > "요즘 취준생 사이에서 진짜 난리난 거 알아? AI 자소서 첨삭인데."
 
 ### 2) 본편 10초 — 화면 녹화
-- iPhone: 제어센터 → **화면 녹화**
-- `hapgyuk.com/start` 열기
-- 데모 ATS 59점 화면 → 스크롤 → "내 자소서 진단하기" 버튼
+- `hapgyuk.com/start` → 데모 ATS 59점 → "내 자소서 진단하기"
 
-### 3) CapCut 편집 (5분)
-1. 새 프로젝트 9:16
-2. 훅 3초 클립 + 화면녹화 10초 이어붙이기
-3. **오디오** → 트렌드 → 업비트 1개
-4. **텍스트** → 자동 자막 → 키워드 노란색:
-   - `AI 자소서` `3분` `무료 진단` `5,900원`
-5. 컷마다 **0.2초 트랜지션** (흰색 플래시 or 줌)
-6. 마지막 2초 엔드카드: `hapgyuk.com/start`
+### 3) 편집 (CapCut 등)
+- 9:16, 훅+녹화 이어붙이기, 자막, 트랜지션, 엔드카드
 
-### 4) 이미지 카피 넣을 때
-컨펌한 PNG 2장은 **전체 화면으로 쓰지 말고**:
-- 1~2초 **인서트** (PIP 작게) 또는 엔드카드만
-- 본편은 **실제 앱 화면 녹화**가 메인
+### 4) 이미지는 인서트만
+컨펌 PNG 2장은 **전체 화면 X** — 1~2초 PIP 또는 엔드카드만.
 
----
-
-## 이미지 2장 용도 (컨펌본)
-
-| 파일 | 쓰는 곳 |
-|------|---------|
-| `pmax_portrait_960x1200.png` | 엔드카드 2초 or 썸네일 |
-| `pmax_square_1200x1200.png` | "첨삭 전→후" 1.5초 인서트 |
-
-**전체 15초를 이미지로 채우면 안 됨** — 그게 v1 실패 원인.
+| 파일 | 용도 |
+|------|------|
+| `pmax_portrait_960x1200.png` | 엔드카드 or D-ID 훅 소스 |
+| `pmax_square_1200x1200.png` | Before/After 1.5초 인서트 |
 
 ---
 
 ## YouTube → PMax
 
-업로드 후 video_id 주면 연결:
 ```bash
 python3 scripts/add_youtube_asset.py --video-id YOUR_ID
 ```
-
----
-
-## 추가 이미지
-
-`creatives/`에 PNG 더 넣어주면 **인서트용으로만** 기획에 반영.  
-풀 영상 자동 렌더는 다시 안 함.
